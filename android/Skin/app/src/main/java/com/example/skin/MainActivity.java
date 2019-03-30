@@ -1,8 +1,10 @@
 package com.example.skin;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -97,6 +99,14 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        imageUri = null;
+        mCapturedImage.setVisibility(View.GONE);
+        mDetectButton.setVisibility(View.GONE);
     }
 
     public static Bitmap getBitmap(Context context, Uri uri) throws IOException {
@@ -214,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         MultipartBody.Part multipart = MultipartBody.Part.createFormData("photo", "MyPhoto.jpg", requestFile);
 
         Retrofit.Builder builder = new Retrofit.Builder()
-                .baseUrl("http://5d9711d8.ngrok.io")
+                .baseUrl("http://0682204b.ngrok.io")
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create());
 
@@ -231,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
                     dialog.dismiss();
                     Log.d(TAG, "onResponse: Response: " + response);
                     Toast.makeText(MainActivity.this, "Succeess", Toast.LENGTH_SHORT).show();
+                    showDiseaseDetails();
                 } catch (Exception e) {
                     dialog.dismiss();
                     Toast.makeText(MainActivity.this, "Success but Something went wrong", Toast.LENGTH_SHORT).show();
@@ -248,6 +259,29 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void showDiseaseDetails() {
+        AlertDialog.Builder builder
+                = new AlertDialog
+                .Builder(MainActivity.this);
+        builder.setMessage("Disease name - 90%");
+        builder.setTitle("Detection complete");
+        builder.setCancelable(false);
+        builder.setPositiveButton(
+                "Done",
+                new DialogInterface
+                        .OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog,
+                                        int which) {
+                        Log.d(TAG, "onClick: Okay");
+
+                    }
+                });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 
 
