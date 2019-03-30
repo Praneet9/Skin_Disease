@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "422837480851",
+    "firebase_url": "https://skin-disease-ad03b.firebaseio.com",
+    "project_id": "skin-disease-ad03b",
+    "storage_bucket": "skin-disease-ad03b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422837480851:android:771ee660cd0cac54",
+        "android_client_info": {
+          "package_name": "com.example.skindisease"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "422837480851-1vth6rapnlf8t0mootcue4h2bsrcjftg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.skindisease",
+            "certificate_hash": "9e68f2339c46f17ee63790c3e9ee349437f7ea4f"
+          }
+        },
+        {
+          "client_id": "422837480851-hmdb438jp0otcs1k5cck18ea5rrccbab.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAt_316NjgKGbKNJLYMbJ5zFWT0Wwr-iyg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "422837480851-hmdb438jp0otcs1k5cck18ea5rrccbab.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
