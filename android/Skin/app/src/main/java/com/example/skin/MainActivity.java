@@ -1,5 +1,6 @@
 package com.example.skin;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mHeadingText, mSubText;
     private Button mDetectButton;
     private final int REQUEST_CODE = 11;
+    private final int RESULT_LOAD_IMAGE = 12;
     private Uri imageUri = null;
     private Bitmap bitmap = null;
     private ProgressDialog dialog;
@@ -107,24 +109,53 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == RESULT_LOAD_IMAGE)
+                onSelectFromGalleryResult(data);
+            else if (requestCode == REQUEST_CODE)
+                onCaptureImageResult(data);
+        }
+
+
+    }
+
+    private void onSelectFromGalleryResult(Intent data) {
+        Bitmap bm = null;
+        mPlaceholderImage.setVisibility(View.GONE);
+        mHeadingText.setVisibility(View.GONE);
+        mSubText.setVisibility(View.GONE);
+        mCapturedImage.setVisibility(View.VISIBLE);
+        if (data != null) {
+            try {
+                imageUri = data.getData();
+                bm = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        mCapturedImage.setImageBitmap(bm);
+        mDetectButton.setVisibility(View.VISIBLE);
+
+    }
+
+    private void onCaptureImageResult(Intent data) {
         String uri = imageUri.toString();
         Log.e("uri-:", uri);
         Toast.makeText(this, imageUri.toString(), Toast.LENGTH_LONG).show();
 
+        mPlaceholderImage.setVisibility(View.GONE);
+        mHeadingText.setVisibility(View.GONE);
+        mSubText.setVisibility(View.GONE);
+        mCapturedImage.setVisibility(View.VISIBLE);
         try {
-            mPlaceholderImage.setVisibility(View.GONE);
-            mHeadingText.setVisibility(View.GONE);
-            mSubText.setVisibility(View.GONE);
-            mCapturedImage.setVisibility(View.VISIBLE);
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-            Drawable d = new BitmapDrawable(getResources(), bitmap);
-            mCapturedImage.setImageDrawable(d);
-            mDetectButton.setVisibility(View.VISIBLE);
-
         } catch (IOException e) {
-            Toast.makeText(this, "Failed to take image!", Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
+        Drawable d = new BitmapDrawable(getResources(), bitmap);
+        mCapturedImage.setImageDrawable(d);
+        mDetectButton.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -139,12 +170,26 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.photo:
                 takePhoto();
+                break;
+            case R.id.gallery:
+                choosePhoto();
+                break;
             default:
-                return super.onContextItemSelected(item);
+                break;
         }
+        return super.onContextItemSelected(item);
+
+    }
+
+    private void choosePhoto() {
+        Log.d(TAG, "choosePhoto: ");
+        Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(i, RESULT_LOAD_IMAGE);
+
     }
 
     private void takePhoto() {
+        Log.d(TAG, "takePhoto: ");
         imageUri = null;
         mCapturedImage.setImageBitmap(null);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -156,39 +201,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-//    private void uploadImage() {
-//        if (imageUri != null) {
-//            final ProgressDialog progressDialog = new ProgressDialog(this);
-//            progressDialog.setTitle("Uploading...");
-//            progressDialog.show();
-//
-//            StorageReference ref = storageReference.child("images/" + UUID.randomUUID().toString());
-//            ref.putFile(imageUri)
-//                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-//                        @Override
-//                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-//                            progressDialog.dismiss();
-//                            Toast.makeText(MainActivity.this, "Uploaded", Toast.LENGTH_SHORT).show();
-//                        }
-//                    })
-//                    .addOnFailureListener(new OnFailureListener() {
-//                        @Override
-//                        public void onFailure(@NonNull Exception e) {
-//                            progressDialog.dismiss();
-//                            Toast.makeText(MainActivity.this, "Failed " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                        }
-//                    })
-//                    .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-//                        @Override
-//                        public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-//                            double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
-//                                    .getTotalByteCount());
-//                            progressDialog.setMessage("Uploaded " + (int) progress + "%");
-//                        }
-//                    });
-//        }
-//
-//    }
 
     public void uploadImage(byte[] imageBytes) {
         Log.d(TAG, "uploadImage: Uploading image........");
@@ -202,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
         MultipartBody.Part multipart = MultipartBody.Part.createFormData("photo", "MyPhoto.jpg", requestFile);
 
         Retrofit.Builder builder = new Retrofit.Builder()
-                .baseUrl("http://29d47bf7.ngrok.io")
+                .baseUrl("http://5d9711d8.ngrok.io")
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create());
 
@@ -231,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                 if (t instanceof SocketTimeoutException) {
                     Log.d(TAG, "Socket time out exception " + t);
                 }
-                Log.d(TAG, "onResponse: Failed: " + t);
+                Log.d(TAG, "onFailure: Failed: " + t);
                 Toast.makeText(MainActivity.this, "Failed!!!", Toast.LENGTH_SHORT).show();
 
             }

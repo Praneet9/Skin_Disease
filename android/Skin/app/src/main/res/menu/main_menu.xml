@@ -6,4 +6,8 @@
         android:icon="@drawable/ic_add_black_24dp"
         android:title="New Photo"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/gallery"
+        android:title="Select from Gallery"
+        app:showAsAction="never" />
 </menu>
