@@ -33,7 +33,7 @@
         android:layout_below="@+id/image_placeholder"
         android:layout_centerInParent="true"
         android:layout_marginTop="8dp"
-        android:text="Empty photo"
+        android:text="Take photo"
         android:textColor="@color/heading_text"
         android:textSize="20sp"
         android:visibility="visible" />

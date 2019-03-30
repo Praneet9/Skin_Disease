@@ -1,10 +1,13 @@
 package com.example.skin;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,8 +23,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.skin.services.PhotoClient;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -32,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private final int REQUEST_CODE = 11;
     private Uri imageUri = null;
     private Bitmap bitmap = null;
+    private ProgressDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,22 +65,48 @@ public class MainActivity extends AppCompatActivity {
         mSubText = findViewById(R.id.sub_text);
 
 
-
         mDetectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                uploadImage();
+
+                dialog = new ProgressDialog(MainActivity.this);
+                dialog.setTitle("Detecting...");
+                dialog.setMessage("Please wait while we detect your disease from the uploaded image");
+                dialog.setCanceledOnTouchOutside(false);
+                dialog.show();
+
+                AsyncTask.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Bitmap bmp = getBitmap(MainActivity.this, imageUri);
+                            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bmp, 256, 256, true);
+                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                            scaledBitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+                            byte[] byteArray = stream.toByteArray();
+                            bmp.recycle();
+                            uploadImage(byteArray);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
             }
 
         });
+    }
+
+    public static Bitmap getBitmap(Context context, Uri uri) throws IOException {
+        Bitmap bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri);
+        return bitmap;
     }
 
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: Result Code: " + resultCode);
-        Log.d(TAG, "onActivityResult: Request Code: " + requestCode);
+
         String uri = imageUri.toString();
         Log.e("uri-:", uri);
         Toast.makeText(this, imageUri.toString(), Toast.LENGTH_LONG).show();
@@ -143,5 +189,54 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //
 //    }
+
+    public void uploadImage(byte[] imageBytes) {
+        Log.d(TAG, "uploadImage: Uploading image........");
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(100, TimeUnit.SECONDS)
+                .readTimeout(100, TimeUnit.SECONDS).build();
+
+        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), imageBytes);
+
+        MultipartBody.Part multipart = MultipartBody.Part.createFormData("photo", "MyPhoto.jpg", requestFile);
+
+        Retrofit.Builder builder = new Retrofit.Builder()
+                .baseUrl("http://29d47bf7.ngrok.io")
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create());
+
+        Retrofit retrofit = builder.build();
+
+        PhotoClient photoClient = retrofit.create(PhotoClient.class);
+
+        Call<ResponseBody> call = photoClient.uploadPhoto(multipart);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    dialog.dismiss();
+                    Log.d(TAG, "onResponse: Response: " + response);
+                    Toast.makeText(MainActivity.this, "Succeess", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    dialog.dismiss();
+                    Toast.makeText(MainActivity.this, "Success but Something went wrong", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                dialog.dismiss();
+                if (t instanceof SocketTimeoutException) {
+                    Log.d(TAG, "Socket time out exception " + t);
+                }
+                Log.d(TAG, "onResponse: Failed: " + t);
+                Toast.makeText(MainActivity.this, "Failed!!!", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+
 
 }
