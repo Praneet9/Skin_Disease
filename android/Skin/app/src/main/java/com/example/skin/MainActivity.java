@@ -9,6 +9,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -26,27 +31,28 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.skin.models.SkinImage;
 import com.example.skin.services.PhotoClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LocationListener {
     private final String TAG = MainActivity.class.getName();
     private ImageView mCapturedImage, mPlaceholderImage;
     private TextView mHeadingText, mSubText;
@@ -56,6 +62,12 @@ public class MainActivity extends AppCompatActivity {
     private Uri imageUri = null;
     private Bitmap bitmap = null;
     private ProgressDialog dialog;
+
+    private final String apiKey = "AIzaSyCJsSEeJpAzMLkT-j4F2j1SxzOVJKIVabk";
+
+    private Double latitude, longitude;
+
+    LocationManager locationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
         mDetectButton = findViewById(R.id.detect_button);
         mHeadingText = findViewById(R.id.empty_text);
         mSubText = findViewById(R.id.sub_text);
+
+//        getLocation();
 
 
         mDetectButton.setOnClickListener(new View.OnClickListener() {
@@ -100,6 +114,67 @@ public class MainActivity extends AppCompatActivity {
 
         });
     }
+
+//    private void getLocation() {
+//        try {
+//            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 5, this);
+//        } catch (SecurityException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+//    private void locationRetrofit() {
+//        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+//// set your desired log level
+//        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+//
+//        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+//// add your other interceptors …
+//
+//// add logging as last interceptor
+//        httpClient.addInterceptor(logging);
+//
+//        Retrofit.Builder builder = new Retrofit.Builder()
+//                .baseUrl("https://maps.googleapis.com")
+//                .addConverterFactory(GsonConverterFactory.create());
+//        Retrofit retrofit = builder.build();
+//
+//
+//        PlacesClient placesClient = retrofit.create(PlacesClient.class);
+//
+//        String myLocation = latitude + "," + longitude;
+//        Log.d(TAG, "locationRetrofit: myLocation: " + myLocation);
+//
+//        Call<Response> call = placesClient.allHospitals(myLocation, 5000, "hospitals", apiKey);
+//        call.enqueue(new Callback<Response>() {
+//
+//
+//            @Override
+//            public void onResponse(Call<Response> call, retrofit2.Response<Response> response) {
+//                try {
+//                    Log.d(TAG, "onResponse: response : " + new JSONObject(response.toString()));
+////                    JSONObject jsonObject = new JSONObject(response.body().toString());
+////                    String output = jsonObject.getString("message");
+////                    Log.d(TAG, "onResponse: output:" + output);
+//                    JsonObject post = new JsonObject().get(response.body().toString()).getAsJsonObject();
+//                    Log.d(TAG, "onResponse: =======: " + post.get("message").getAsString());
+//
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+////                JsonObject post = new JsonObject().get(response.body().toString()).getAsJsonObject();
+////                Log.d(TAG, "onResponse: post.get(\"results\")" + post.get("results"));
+//            }
+//
+//            @Override
+//            public void onFailure(Call<Response> call, Throwable t) {
+//                Log.d(TAG, "onFailure: Erorr------: " + t);
+//            }
+//        });
+//
+//    }
+
 
     @Override
     public void onBackPressed() {
@@ -192,22 +267,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void choosePhoto() {
-        Log.d(TAG, "choosePhoto: ");
-        Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(i, RESULT_LOAD_IMAGE);
+        try {
+            Log.d(TAG, "choosePhoto: ");
+            Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(i, RESULT_LOAD_IMAGE);
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this, "Failed to open gallery.", Toast.LENGTH_SHORT).show();
 
+        }
     }
 
     private void takePhoto() {
-        Log.d(TAG, "takePhoto: ");
-        imageUri = null;
-        mCapturedImage.setImageBitmap(null);
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        File file = new File(Environment.getExternalStorageDirectory(),
-                "MyPhoto.jpg");
-        imageUri = Uri.fromFile(file);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-        startActivityForResult(intent, REQUEST_CODE);
+        try {
+            Log.d(TAG, "takePhoto: ");
+            imageUri = null;
+            mCapturedImage.setImageBitmap(null);
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File file = new File(Environment.getExternalStorageDirectory(),
+                    "MyPhoto.jpg");
+            imageUri = Uri.fromFile(file);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(intent, REQUEST_CODE);
+        } catch (Exception e) {
+            Toast.makeText(MainActivity.this, "Failed to open camera", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -231,25 +314,27 @@ public class MainActivity extends AppCompatActivity {
         Retrofit retrofit = builder.build();
 
         PhotoClient photoClient = retrofit.create(PhotoClient.class);
-
-        Call<ResponseBody> call = photoClient.uploadPhoto(multipart);
-        call.enqueue(new Callback<ResponseBody>() {
+        SkinImage skinImage;
+        Call<SkinImage> call = photoClient.uploadPhoto(multipart);
+        call.enqueue(new Callback<SkinImage>() {
             @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-
+            public void onResponse(Call<SkinImage> call, retrofit2.Response<SkinImage> response) {
                 try {
                     dialog.dismiss();
                     Log.d(TAG, "onResponse: Response: " + response);
                     Toast.makeText(MainActivity.this, "Succeess", Toast.LENGTH_SHORT).show();
-                    showDiseaseDetails();
+                    SkinImage skinImage = response.body();
+                    Log.d(TAG, "onResponse: message: " + skinImage.getMessage());
+
+                    showDiseaseDetails(skinImage.getMessage(), skinImage.getPercentage());
                 } catch (Exception e) {
                     dialog.dismiss();
-                    Toast.makeText(MainActivity.this, "Success but Something went wrong", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please send image of infected area!!", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
+            public void onFailure(Call<SkinImage> call, Throwable t) {
                 dialog.dismiss();
                 if (t instanceof SocketTimeoutException) {
                     Log.d(TAG, "Socket time out exception " + t);
@@ -261,12 +346,15 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void showDiseaseDetails() {
+    private void showDiseaseDetails(String output, String percentage) {
         AlertDialog.Builder builder
                 = new AlertDialog
                 .Builder(MainActivity.this);
-        builder.setMessage("Disease name - 90%");
-        builder.setTitle("Detection complete");
+        if (percentage.equals("null")) {
+            percentage = "-";
+        }
+        builder.setMessage("Probability = " + percentage + "%");
+        builder.setTitle(output);
         builder.setCancelable(false);
         builder.setPositiveButton(
                 "Done",
@@ -285,4 +373,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    public void onLocationChanged(Location location) {
+//        locationText.setText("Latitude: " + location.getLatitude() + "\n Longitude: " + location.getLongitude());
+        Log.d(TAG, "onLocationChanged: Latitude: " + location.getLatitude());
+        Log.d(TAG, "onLocationChanged: Longitude: " + location.getLongitude());
+        latitude = location.getLatitude();
+        longitude = location.getLongitude();
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+//            locationText.setText(locationText.getText() + "\n" + addresses.get(0).getAddressLine(0) + ", " +
+//                    addresses.get(0).getAddressLine(1) + ", " + addresses.get(0).getAddressLine(2));
+
+            Log.d(TAG, "onLocationChanged: Address: " + addresses.get(0).getAddressLine(0));
+            Log.d(TAG, "onLocationChanged: Address: " + addresses.get(1).getAddressLine(1));
+            Log.d(TAG, "onLocationChanged: Address: " + addresses.get(2).getAddressLine(2));
+        } catch (Exception e) {
+
+        }
+
+//        locationRetrofit();
+
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        Toast.makeText(MainActivity.this, "Please Enable GPS and Internet", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
 }
