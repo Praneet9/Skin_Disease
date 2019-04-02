@@ -33,7 +33,7 @@
         android:layout_below="@+id/image_placeholder"
         android:layout_centerInParent="true"
         android:layout_marginTop="8dp"
-        android:text="Empty photo"
+        android:text="Take photo"
         android:textColor="@color/heading_text"
         android:textSize="20sp"
         android:visibility="visible" />
@@ -55,7 +55,15 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
+        android:background="@drawable/button"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp"
         android:text="Detect Disease"
+        android:textColor="#fff"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
         android:visibility="invisible" />
 
 
