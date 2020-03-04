@@ -30,6 +30,11 @@
 - Python-telegram-bot 11.1.0
 - Flask
 
+#### Download Model
+```
+https://drive.google.com/open?id=1es4Oji_651rxAgKJaiDoTiwfJDpwG7fR
+```
+
 #### Run telegram bot
 ```
 cd Bot
